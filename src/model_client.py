@@ -2,6 +2,7 @@
 import logging
 import os
 from datetime import datetime
+from typing import Any
 
 import dotenv
 from openai import OpenAI
@@ -39,11 +40,19 @@ class ModelClient:
             timeout=30,
         )
 
-    def think(self, messages: list[dict]) -> str:
-        """调用模型生成响应（非流式）.
+    def _get_user_content(self, messages: list[dict[str, Any]]) -> str:
+        for m in messages:
+            if m.get("role") == "user":
+                content = m.get("content", "")
+                return content[:50] + "..." if len(content) > 50 else content
+        return ""
+
+    def think(self, messages: list[dict[str, Any]], stream: bool = False) -> str:
+        """调用模型生成响应.
 
         Args:
             messages: 对话消息列表
+            stream: 是否使用流式输出，默认 False
 
         Returns:
             模型生成的文本响应
@@ -51,51 +60,34 @@ class ModelClient:
         Raises:
             Exception: API 调用失败时抛出
         """
-        user_content = next((m["content"][:50] + "..." if len(m["content"]) > 50 else m["content"] for m in messages if m["role"] == "user"), "")
-        logger.info(_format_message(f"💬 think: {user_content}"))
+        user_content = self._get_user_content(messages)
+        mode = "think_stream" if stream else "think"
+        logger.info(_format_message(f"💬 {mode}: {user_content}"))
 
         try:
             response = self.client.chat.completions.create(
                 model=self.model_id,
-                messages=messages,
-            )
-            content = response.choices[0].message.content or ""
-            logger.info(_format_message(f"✅ think 完成，响应长度: {len(content)} 字符"))
-            return content
-        except Exception as e:
-            logger.error(_format_message(f"❌ think 失败: {e}"))
-            raise
-
-    def think_stream(self, messages: list[dict]) -> str:
-        """调用模型生成响应（流式）.
-
-        Args:
-            messages: 对话消息列表
-
-        Returns:
-            模型生成的完整文本响应
-
-        Raises:
-            Exception: API 调用失败时抛出
-        """
-        user_content = next((m["content"][:50] + "..." if len(m["content"]) > 50 else m["content"] for m in messages if m["role"] == "user"), "")
-        logger.info(_format_message(f"💬 think_stream: {user_content}"))
-
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model_id,
-                messages=messages,
-                stream=True,
+                messages=messages,  # type: ignore[arg-type]
+                stream=stream,
             )
 
-            collected_content = []
-            for chunk in response:
-                content = chunk.choices[0].delta.content or ""
-                collected_content.append(content)
+            if stream:
+                collected_content = []
+                try:
+                    for chunk in response:  # type: ignore[union-attr]
+                        content = chunk.choices[0].delta.content or ""  # type: ignore[union-attr]
+                        collected_content.append(content)
+                finally:
+                    response.close()  # type: ignore[union-attr]
 
-            full_content = "".join(collected_content)
-            logger.info(_format_message(f"✅ think_stream 完成，响应长度: {len(full_content)} 字符"))
-            return full_content
+                full_content = "".join(collected_content)
+                logger.info(_format_message(f"✅ {mode} 完成，响应长度: {len(full_content)} 字符"))
+                return full_content
+            else:
+                content = response.choices[0].message.content or ""  # type: ignore[union-attr]
+                logger.info(_format_message(f"✅ {mode} 完成，响应长度: {len(content)} 字符"))
+                return content
+
         except Exception as e:
-            logger.error(_format_message(f"❌ think_stream 失败: {e}"))
+            logger.error(_format_message(f"❌ {mode} 失败: {e}"))
             raise
