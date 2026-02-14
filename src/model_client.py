@@ -1,19 +1,12 @@
 """模型调用客户端."""
-import logging
 import os
-from datetime import datetime
 from typing import Any
 
-import dotenv
 from openai import OpenAI
 
-dotenv.load_dotenv()
+from src.utils.log import format_log_message, get_logger
 
-logger = logging.getLogger(__name__)
-
-
-def _format_message(msg: str) -> str:
-    return f"[{datetime.now().strftime('%H:%M:%S')}] {msg}"
+logger = get_logger(__name__)
 
 
 class ModelClient:
@@ -32,7 +25,7 @@ class ModelClient:
         if not self.api_url:
             raise ValueError("API_URL 未配置")
 
-        logger.info(_format_message(f"🚀 初始化成功，使用模型: {self.model_id}"))
+        logger.info(format_log_message(f"🚀 初始化成功，使用模型: {self.model_id}"))
 
         self.client = OpenAI(
             api_key=self.api_key,
@@ -62,7 +55,7 @@ class ModelClient:
         """
         user_content = self._get_user_content(messages)
         mode = "think_stream" if stream else "think"
-        logger.info(_format_message(f"💬 {mode}: {user_content}"))
+        logger.info(format_log_message(f"💬 {mode}: {user_content}"))
 
         try:
             response = self.client.chat.completions.create(
@@ -81,13 +74,13 @@ class ModelClient:
                     response.close()  # type: ignore[union-attr]
 
                 full_content = "".join(collected_content)
-                logger.info(_format_message(f"✅ {mode} 完成，响应长度: {len(full_content)} 字符"))
+                logger.info(format_log_message(f"✅ {mode} 完成，响应长度: {len(full_content)} 字符"))
                 return full_content
             else:
                 content = response.choices[0].message.content or ""  # type: ignore[union-attr]
-                logger.info(_format_message(f"✅ {mode} 完成，响应长度: {len(content)} 字符"))
+                logger.info(format_log_message(f"✅ {mode} 完成，响应长度: {len(content)} 字符"))
                 return content
 
         except Exception as e:
-            logger.error(_format_message(f"❌ {mode} 失败: {e}"))
+            logger.error(format_log_message(f"❌ {mode} 失败: {e}"))
             raise
