@@ -104,7 +104,8 @@ agent-learn/
 │   ├── agents/
 │   │   ├── __init__.py
 │   │   ├── react.py             # ReAct agent implementation
-│   │   └── plan_and_solve.py    # Plan-and-Solve agent implementation
+│   │   ├── plan_and_solve.py    # Plan-and-Solve agent implementation
+│   │   └── reflection.py        # Reflection agent implementation
 │   ├── tools/
 │   │   ├── __init__.py
 │   │   ├── registry.py          # Tool registry and executor
@@ -144,6 +145,7 @@ result = registry.execute("web_search", query="...")
 ### Agent Patterns
 - **ReAct**: Alternates between reasoning and action execution
 - **Plan-and-Solve**: Creates plan first, then executes step by step
+- **Reflection**: Iteratively reflects on and improves its own output
 
 ## Working Habits
 
