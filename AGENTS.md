@@ -2,11 +2,11 @@
 
 ## Project Overview
 
-This is a Python project for learning and experimenting with AI agents. The project is in its initial setup phase with no existing code yet.
+This is a Python project for learning and experimenting with AI agents. The project implements various agent patterns including ReAct and Plan-and-Solve.
 
 ## Language and Style
 
-- Always reply in Simplified Chinese
+- Always reply in Simplified Chinese when communicating with users
 - Direct answers without unnecessary pleasantries
 - Use Chinese for code comments
 
@@ -19,27 +19,33 @@ pip install -r requirements.txt
 
 ### Running the Application
 ```bash
-python -m src
+python -m src                    # Run main module
+python test_model_client.py       # Run individual test files
+python test_tools.py
+python test_react.py
+python test_plan_and_solve.py
 ```
 
 ### Linting and Formatting
 ```bash
-ruff check .                    # Run ruff linter
-ruff check --fix .              # Auto-fix linting issues
-black .                         # Format code with black
-black --check .                 # Check formatting without changes
-isort --check-only --diff .     # Check import sorting
+ruff check .                     # Run ruff linter
+ruff check --fix .               # Auto-fix linting issues
+black .                          # Format code with black
+black --check .                  # Check formatting without changes
+isort --check-only --diff .      # Check import sorting
 mypy src/                       # Type checking with mypy
+mypy src/ --ignore-missing-imports  # Ignore missing stubs (e.g., serpapi)
 ```
 
 ### Testing
 ```bash
-pytest                          # Run all tests
-pytest -v                       # Run tests with verbose output
-pytest tests/                   # Run tests in tests directory
+pytest                           # Run all tests
+pytest -v                        # Run tests with verbose output
+pytest tests/                    # Run tests in tests directory
+pytest test_*.py                 # Run tests matching pattern
 pytest -k "test_name"           # Run specific test by name
-pytest --tb=short               # Short traceback on failures
-pytest -x                       # Stop on first failure
+pytest --tb=short                # Short traceback on failures
+pytest -x                        # Stop on first failure
 ```
 
 ## Code Style Guidelines
@@ -62,8 +68,8 @@ pytest -x                       # Stop on first failure
 - Use type hints for all function parameters and return values
 - Prefer explicit types over `Any` when possible
 - Use `Optional[T]` instead of `T | None` for compatibility
-- Define custom types using `TypeAlias` or `TypedDict` when beneficial
 - Use generics (`List[T]`, `Dict[K, V]`) for container types
+- Add `# type: ignore[xxx]` comments when necessary for external libraries
 
 ### Naming Conventions
 - **Files**: lowercase with underscores (`my_module.py`)
@@ -81,25 +87,63 @@ pytest -x                       # Stop on first failure
 - Log errors with appropriate severity levels
 - Let exceptions propagate when the caller should handle them
 
-### Code Organization
-- Keep functions small and focused (single responsibility)
-- Maximum function length: ~50 lines
-- Use descriptive variable and function names
-- Extract repeated code into reusable functions
-- Keep related code together in modules
-- Use `__init__.py` to mark packages and control exports
+### Logging
+- Use the shared logging utilities from `src/utils/log.py`
+- Use `get_logger(__name__)` to create loggers
+- Use `format_log_message()` for consistent timestamp formatting
+- Include contextual information in log messages
 
-### Documentation
-- Use docstrings for all public functions, classes, and modules
-- Follow Google or NumPy docstring format
-- Include docstring for private methods when complex
-- Update docstrings when modifying code
+## Project Structure
 
-### Async Code
-- Use `async/await` for I/O-bound operations
-- Use `asyncio` for concurrent operations
-- Avoid blocking calls in async functions
-- Set appropriate timeouts for async operations
+```
+agent-learn/
+├── src/
+│   ├── __init__.py              # Main package init (loads dotenv)
+│   ├── __main__.py              # Application entry point
+│   ├── model_client.py           # LLM API client
+│   ├── agents/
+│   │   ├── __init__.py
+│   │   ├── react.py             # ReAct agent implementation
+│   │   └── plan_and_solve.py    # Plan-and-Solve agent implementation
+│   ├── tools/
+│   │   ├── __init__.py
+│   │   ├── registry.py          # Tool registry and executor
+│   │   └── search.py            # Web search tool (SerpApi)
+│   └── utils/
+│       ├── __init__.py
+│       └── log.py                # Shared logging utilities
+├── tests/                       # Test directory (when added)
+├── test_*.py                    # Individual test files in root
+├── docs/                        # Documentation
+├── requirements.txt             # Dependencies
+├── README.md                    # Project documentation
+├── AGENTS.md                    # This file
+├── .env                         # Environment variables (not committed)
+└── .gitignore                   # Git ignore rules
+```
+
+## Agent Implementation Patterns
+
+### Tool Interface
+Tools must implement the following interface:
+```python
+class Tool:
+    name: str                    # Unique tool identifier
+    description: str             # Tool description for LLM
+    execute(**kwargs) -> str     # Execute tool with parameters
+```
+
+### Tool Registry
+Use `ToolRegistry` to manage tools:
+```python
+registry = ToolRegistry()
+registry.register(WebSearchTool())
+result = registry.execute("web_search", query="...")
+```
+
+### Agent Patterns
+- **ReAct**: Alternates between reasoning and action execution
+- **Plan-and-Solve**: Creates plan first, then executes step by step
 
 ## Working Habits
 
@@ -111,49 +155,39 @@ pytest -x                       # Stop on first failure
 - Write tests before or alongside new features
 - Review existing code to understand patterns before adding new code
 
-## AI Agent Specific Guidelines
-
-### Interacting with AI Models
-- Store API keys in `.env` files, never commit them
-- Use environment variables for model configuration
-- Implement proper error handling for API rate limits
-- Add retry logic with exponential backoff for API calls
-- Log model inputs and outputs for debugging (respect privacy)
-- Consider using LangChain or similar frameworks for flexibility
-
-### Agent Design Patterns
-- Implement clear separation between agent logic and tools
-- Use structured outputs when available (JSON mode)
-- Implement proper prompting techniques
-- Consider context window limitations
-- Add human-in-the-loop for sensitive operations
-- Implement proper feedback mechanisms
-
-### Testing AI Agents
-- Test prompts in isolation
-- Mock external API calls in unit tests
-- Test error handling and edge cases
-- Use evaluation frameworks for quality assessment
-- Implement integration tests for agent workflows
-
 ## Dependencies Management
 
-- Add new dependencies to `requirements.txt` with versions
+- Add new dependencies to `requirements.txt` with versions (e.g., `package>=1.0.0`)
 - Pin versions for critical dependencies
-- Use `pip-compile` for reproducible builds
 - Review dependencies for security vulnerabilities regularly
 - Update dependencies periodically but carefully
+- Current dependencies:
+  - `python-dotenv>=1.0.0` - Environment variable loading
+  - `openai>=1.0.0` - LLM API client
+  - `serpapi>=0.1.5` - Web search API
 
-## File Structure
+## Configuration
 
+### Environment Variables (in .env)
+```bash
+API_KEY=your_api_key            # LLM API key
+MODEL_ID=qwen-plus              # Model identifier
+API_URL=https://...             # API base URL
+SERPAPI_API_KEY=your_key       # SerpApi key for web search
 ```
-agent-learn/
-├── src/                 # Source code
-├── tests/               # Test files (create when adding code)
-├── docs/                # Documentation and notes
-├── requirements.txt     # Dependencies
-├── README.md           # Project documentation
-├── AGENTS.md           # This file
-├── .env                # Environment variables (not committed)
-└── .gitignore          # Git ignore rules
-```
+
+## Testing AI Agents
+
+- Test prompts in isolation
+- Mock external API calls in unit tests when possible
+- Test error handling and edge cases
+- Use integration tests for full agent workflows
+- Test both success and failure scenarios
+
+## Error Handling in Agents
+
+- Always handle tool execution errors gracefully
+- Log errors with contextual information
+- Return meaningful error messages to the agent
+- Implement retry logic for transient failures
+- Set appropriate timeouts for API calls
