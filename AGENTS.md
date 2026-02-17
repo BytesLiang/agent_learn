@@ -1,195 +1,169 @@
-# Agent Learn - Development Guidelines
+# Agent Learn - 开发指南
 
-## Project Overview
+## 项目概述
 
-This is a Python project for learning and experimenting with AI agents. The project implements various agent patterns including ReAct and Plan-and-Solve.
+Python 项目，用于学习和实验 AI Agent 模式，包括 ReAct、Plan-and-Solve 等。
 
-## Language and Style
+## 语言和风格
 
-- Always reply in Simplified Chinese when communicating with users
-- Direct answers without unnecessary pleasantries
-- Use Chinese for code comments
+- 与用户交流时使用简体中文
+- 代码注释用中文
+- 直接回答问题，不要客套话
 
-## Build, Lint, and Test Commands
+## 构建、测试、代码检查命令
 
-### Installation
+### 安装
 ```bash
 pip install -r requirements.txt
 ```
 
-### Running the Application
+### 运行
 ```bash
-python -m src                    # Run main module
-python test_model_client.py       # Run individual test files
-python test_tools.py
-python test_react.py
-python test_plan_and_solve.py
+python -m src                    # 运行主模块
+python test_react.py            # 运行单个测试文件
 ```
 
-### Linting and Formatting
+### 代码检查和格式化
 ```bash
-ruff check .                     # Run ruff linter
-ruff check --fix .               # Auto-fix linting issues
-black .                          # Format code with black
-black --check .                  # Check formatting without changes
-isort --check-only --diff .      # Check import sorting
-mypy src/                       # Type checking with mypy
-mypy src/ --ignore-missing-imports  # Ignore missing stubs (e.g., serpapi)
+ruff check . && ruff check --fix .  # 检查并自动修复
+black .                          # 格式化代码
+black --check .                  # 检查格式
+isort --check-only --diff .      # 检查 import 顺序
+mypy src/ --ignore-missing-imports  # 类型检查
 ```
 
-### Testing
+### 测试
 ```bash
-pytest                           # Run all tests
-pytest -v                        # Run tests with verbose output
-pytest tests/                    # Run tests in tests directory
-pytest test_*.py                 # Run tests matching pattern
-pytest -k "test_name"           # Run specific test by name
-pytest --tb=short                # Short traceback on failures
-pytest -x                        # Stop on first failure
+pytest                           # 运行所有测试
+pytest -v                        # 详细输出
+pytest test_react.py             # 运行单个测试文件
+pytest -k "test_name"            # 按名称运行特定测试
+pytest -x                        # 首次失败后停止
+pytest --tb=short                # 简短错误信息
 ```
 
-## Code Style Guidelines
+## 代码风格
 
-### Imports
-- Use absolute imports: `from package import module`
-- Group imports in this order: standard library, third-party, local application
-- Sort imports alphabetically within each group
-- Use `isort` to maintain import order
-- Avoid wildcard imports (`from module import *`)
+### Import
+- 使用绝对导入：`from package import module`
+- 分组顺序：标准库 > 第三方 > 本地应用
+- 组内按字母排序
+- 避免 `from module import *`
 
-### Formatting
-- Use 4 spaces for indentation (PEP 8 standard)
-- Maximum line length: 100 characters
-- Use blank lines to separate functions, classes, and logical sections
-- Use consistent spacing around operators and after commas
-- No trailing whitespace
+### 格式
+- 4 空格缩进
+- 最大行长度 100 字符
+- 函数、类之间用空行分隔
+- 运算符和逗号后保持一致间距
+- 无尾部空白
 
-### Types
-- Use type hints for all function parameters and return values
-- Prefer explicit types over `Any` when possible
-- Use `Optional[T]` instead of `T | None` for compatibility
-- Use generics (`List[T]`, `Dict[K, V]`) for container types
-- Add `# type: ignore[xxx]` comments when necessary for external libraries
+### 类型
+- 所有函数参数和返回值使用类型提示
+- 尽量避免 `Any`
+- 使用 `Optional[T]` 而非 `T | None`
+- 使用泛型 `List[T]`, `Dict[K, V]`
+- 外部库可加 `# type: ignore`
 
-### Naming Conventions
-- **Files**: lowercase with underscores (`my_module.py`)
-- **Classes**: CamelCase (`MyClass`)
-- **Functions/variables**: snake_case (`my_function`, `my_variable`)
-- **Constants**: UPPER_SNAKE_CASE (`MY_CONSTANT`)
-- **Private methods/variables**: prefix with `_` (`_private_method`)
-- **Avoid single-character names except for counters or iterators
+### 命名
+- 文件：snake_case (`my_module.py`)
+- 类：CamelCase (`MyClass`)
+- 函数/变量：snake_case (`my_function`)
+- 常量：UPPER_SNAKE_CASE (`MY_CONSTANT`)
+- 私有方法/变量：前缀 `_` (`_private_method`)
+- 避免单字符命名（计数器除外）
 
-### Error Handling
-- Use specific exceptions (`ValueError`, `FileNotFoundError`, etc.)
-- Don't catch generic `Exception` unless absolutely necessary
-- Provide meaningful error messages
-- Use `try/except` blocks sparingly; prefer validation
-- Log errors with appropriate severity levels
-- Let exceptions propagate when the caller should handle them
+### 错误处理
+- 使用具体异常 (`ValueError`, `FileNotFoundError` 等)
+- 不随意捕获 `Exception`
+- 提供有意义的错误信息
+- 优先验证而非异常捕获
+- 使用适当级别的日志记录
+- 让异常在调用者需要处理时传播
 
-### Logging
-- Use the shared logging utilities from `src/utils/log.py`
-- Use `get_logger(__name__)` to create loggers
-- Use `format_log_message()` for consistent timestamp formatting
-- Include contextual information in log messages
+### 日志
+- 使用 `src/utils/log.py` 中的共享工具
+- 用 `get_logger(__name__)` 创建 logger
+- 用 `format_log_message()` 保持时间戳格式一致
+- 日志包含上下文信息
 
-## Project Structure
+## 项目结构
 
 ```
 agent-learn/
 ├── src/
-│   ├── __init__.py              # Main package init (loads dotenv)
-│   ├── __main__.py              # Application entry point
-│   ├── model_client.py           # LLM API client
+│   ├── __init__.py              # 加载 dotenv
+│   ├── __main__.py              # 入口点
+│   ├── model_client.py           # LLM API 客户端
 │   ├── agents/
-│   │   ├── __init__.py
-│   │   ├── react.py             # ReAct agent implementation
-│   │   ├── plan_and_solve.py    # Plan-and-Solve agent implementation
-│   │   └── reflection.py        # Reflection agent implementation
+│   │   ├── react.py             # ReAct Agent
+│   │   ├── plan_and_solve.py    # Plan-and-Solve Agent
+│   │   ├── reflection.py        # Reflection Agent
+│   │   └── autogen_team.py      # AutoGen 多代理团队
 │   ├── tools/
-│   │   ├── __init__.py
-│   │   ├── registry.py          # Tool registry and executor
-│   │   └── search.py            # Web search tool (SerpApi)
+│   │   ├── registry.py          # 工具注册和执行器
+│   │   └── search.py            # Web 搜索工具
 │   └── utils/
-│       ├── __init__.py
-│       └── log.py                # Shared logging utilities
-├── tests/                       # Test directory (when added)
-├── test_*.py                    # Individual test files in root
-├── docs/                        # Documentation
-├── requirements.txt             # Dependencies
-├── README.md                    # Project documentation
-├── AGENTS.md                    # This file
-├── .env                         # Environment variables (not committed)
-└── .gitignore                   # Git ignore rules
+│       └── log.py                # 日志工具
+├── test_*.py                    # 根目录测试文件
+├── requirements.txt
+├── .env                         # 环境变量（不提交）
+└── .gitignore
 ```
 
-## Agent Implementation Patterns
+## Agent 实现模式
 
-### Tool Interface
-Tools must implement the following interface:
+### 工具接口
 ```python
 class Tool:
-    name: str                    # Unique tool identifier
-    description: str             # Tool description for LLM
-    execute(**kwargs) -> str     # Execute tool with parameters
+    name: str
+    description: str
+    execute(**kwargs) -> str
 ```
 
-### Tool Registry
-Use `ToolRegistry` to manage tools:
+### 工具注册
 ```python
 registry = ToolRegistry()
 registry.register(WebSearchTool())
 result = registry.execute("web_search", query="...")
 ```
 
-### Agent Patterns
-- **ReAct**: Alternates between reasoning and action execution
-- **Plan-and-Solve**: Creates plan first, then executes step by step
-- **Reflection**: Iteratively reflects on and improves its own output
+### Agent 模式
+- **ReAct**：交替推理和执行
+- **Plan-and-Solve**：先创建计划，再逐步执行
+- **Reflection**：迭代反思和改进输出
 
-## Working Habits
+## 工作习惯
 
-- Read related files before making changes
-- Ask for clarification when uncertain
-- Make minimal necessary changes per modification
-- Run linting and tests after making changes
-- Commit changes in logical, atomic units
-- Write tests before or alongside new features
-- Review existing code to understand patterns before adding new code
+- 修改前先阅读相关文件
+- 不确定时先问
+- 每次做最小必要修改
+- 修改后运行 lint 和测试
+- 以逻辑原子单位提交
+- 新功能编写测试
+- 添加新代码前先了解现有模式
 
-## Dependencies Management
+## 依赖管理
 
-- Add new dependencies to `requirements.txt` with versions (e.g., `package>=1.0.0`)
-- Pin versions for critical dependencies
-- Review dependencies for security vulnerabilities regularly
-- Update dependencies periodically but carefully
-- Current dependencies:
-  - `python-dotenv>=1.0.0` - Environment variable loading
-  - `openai>=1.0.0` - LLM API client
-  - `serpapi>=0.1.5` - Web search API
+- 新依赖添加到 `requirements.txt`（带版本，如 `package>=1.0.0`）
+- 关键依赖固定版本
+- 定期检查安全漏洞
+- 当前依赖：python-dotenv, openai, serpapi, autogen-agentchat, autogen-ext
 
-## Configuration
+## 配置
 
-### Environment Variables (in .env)
+### 环境变量 (.env)
 ```bash
-API_KEY=your_api_key            # LLM API key
-MODEL_ID=qwen-plus              # Model identifier
-API_URL=https://...             # API base URL
-SERPAPI_API_KEY=your_key       # SerpApi key for web search
+API_KEY=your_api_key
+MODEL_ID=qwen-plus
+API_URL=https://...
+SERPAPI_API_KEY=your_key
 ```
 
-## Testing AI Agents
+## 测试指南
 
-- Test prompts in isolation
-- Mock external API calls in unit tests when possible
-- Test error handling and edge cases
-- Use integration tests for full agent workflows
-- Test both success and failure scenarios
-
-## Error Handling in Agents
-
-- Always handle tool execution errors gracefully
-- Log errors with contextual information
-- Return meaningful error messages to the agent
-- Implement retry logic for transient failures
-- Set appropriate timeouts for API calls
+- 隔离测试 prompt
+- 单元测试尽量 mock 外部 API
+- 测试错误处理和边界情况
+- 集成测试覆盖完整工作流
+- 测试成功和失败场景
+- Agent 错误处理：优雅处理工具执行错误、记录上下文信息、向 agent 返回有意义的错误信息、实现瞬时失败重试、设置适当的 API 超时
