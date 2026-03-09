@@ -5,3 +5,10 @@ serpapi>=0.1.5
 autogen-agentchat>=0.4.0
 autogen-ext[openai]>=0.4.0
 socksio>=1.0.0
+
+# LangGraph dependencies
+langgraph>=0.2.0
+langchain-core>=0.3.0
+
+# Tavily Search API
+tavily-python>=0.5.0

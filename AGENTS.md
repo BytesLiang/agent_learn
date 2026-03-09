@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-Python 项目，用于学习和实验 AI Agent 模式，包括 ReAct、Plan-and-Solve 等。
+Python 项目，用于学习和实验 AI Agent 模式，包括 ReAct、Plan-and-Solve、Reflection、AutoGen 多代理团队以及 LangGraph 问答助手。
 
 ## 语言和风格
 
@@ -21,6 +21,7 @@ pip install -r requirements.txt
 ```bash
 python -m src                    # 运行主模块
 python test_react.py            # 运行单个测试文件
+python test_langgraph_qa.py     # 测试 LangGraph 问答助手
 ```
 
 ### 代码检查和格式化
@@ -98,7 +99,15 @@ agent-learn/
 │   │   ├── react.py             # ReAct Agent
 │   │   ├── plan_and_solve.py    # Plan-and-Solve Agent
 │   │   ├── reflection.py        # Reflection Agent
-│   │   └── autogen_team.py      # AutoGen 多代理团队
+│   │   ├── autogen_team.py      # AutoGen 多代理团队
+│   │   └── langgraph_qa/        # LangGraph 问答助手
+│   │       ├── __init__.py
+│   │       ├── agent.py         # 主 Agent 实现
+│   │       ├── states.py        # 状态定义
+│   │       └── nodes/           # 三阶段节点
+│   │           ├── understand.py  # 理解阶段
+│   │           ├── search.py      # 搜索阶段（Tavily API）
+│   │           └── answer.py      # 回答阶段
 │   ├── tools/
 │   │   ├── registry.py          # 工具注册和执行器
 │   │   └── search.py            # Web 搜索工具
@@ -128,9 +137,14 @@ result = registry.execute("web_search", query="...")
 ```
 
 ### Agent 模式
-- **ReAct**：交替推理和执行
-- **Plan-and-Solve**：先创建计划，再逐步执行
-- **Reflection**：迭代反思和改进输出
+- **ReAct**：交替推理和执行，适合需要多步推理的问题
+- **Plan-and-Solve**：先创建计划，再逐步执行，适合复杂任务分解
+- **Reflection**：迭代反思和改进输出，适合需要高质量输出的任务
+- **AutoGen 多代理团队**：多角色协作，适合软件开发等复杂任务
+- **LangGraph 问答助手**：三阶段流程（理解→搜索→回答），适合问答场景
+  - 理解阶段：意图识别、实体提取
+  - 搜索阶段：Tavily API 实时搜索
+  - 回答阶段：基于搜索结果生成回答
 
 ## 工作习惯
 
@@ -147,17 +161,32 @@ result = registry.execute("web_search", query="...")
 - 新依赖添加到 `requirements.txt`（带版本，如 `package>=1.0.0`）
 - 关键依赖固定版本
 - 定期检查安全漏洞
-- 当前依赖：python-dotenv, openai, serpapi, autogen-agentchat, autogen-ext
+- 当前依赖：
+  - python-dotenv, openai, serpapi
+  - autogen-agentchat, autogen-ext
+  - langgraph, langchain-core
+  - tavily-python
 
 ## 配置
 
 ### 环境变量 (.env)
 ```bash
+# 大模型 API 配置
 API_KEY=your_api_key
 MODEL_ID=qwen-plus
 API_URL=https://...
+
+# SerpApi 搜索
 SERPAPI_API_KEY=your_key
+
+# Tavily 搜索 API（用于 LangGraph 问答助手）
+TAVILY_API_KEY=your_tavily_key
 ```
+
+### 获取 Tavily API Key
+1. 访问 https://tavily.com 注册账号
+2. 在 Dashboard 获取 API Key
+3. 每月免费 1000 次搜索
 
 ## 测试指南
 
@@ -167,3 +196,22 @@ SERPAPI_API_KEY=your_key
 - 集成测试覆盖完整工作流
 - 测试成功和失败场景
 - Agent 错误处理：优雅处理工具执行错误、记录上下文信息、向 agent 返回有意义的错误信息、实现瞬时失败重试、设置适当的 API 超时
+
+## LangGraph 问答助手使用示例
+
+```python
+from src.agents.langgraph_qa import LangGraphQAAgent
+from src.model_client import ModelClient
+
+model_client = ModelClient()
+agent = LangGraphQAAgent(model_client)
+
+# 简单模式
+answer = agent.run("Python 的创始人是谁？")
+
+# 详细模式（返回完整状态）
+result = agent.run_with_details("为什么 Python 如此流行？")
+print(result["intent_analysis"])  # 意图分析结果
+print(result["search_results"])   # 搜索结果
+print(result["final_answer"])     # 最终回答
+```
